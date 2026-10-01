@@ -2,6 +2,10 @@
 
 Create free fake boarding passes for Apple Wallet and LARP your next first-class trip. Five airline styles, searchable airports, cabin selection, previews, and signed .pkpass downloads.
 
+Quick generate only needs a passenger name in `LASTNAME/FIRSTNAME` format and a quantity from 1–5. It generates different airports and boarding times, always in First Class. Choose an airline and color, preview each journey, or shuffle for new journeys. Custom pass keeps the manual editor available.
+
+One pass downloads as `.pkpass`; multiple passes download together as an Apple Wallet `.pkpasses` bundle. Each signed pass uses one daily generation. If a batch stops partway through, completed passes can be downloaded and the remaining passes retried without generating the completed ones again.
+
 ## Run
 
 ```sh
@@ -93,6 +97,12 @@ The Worker source, public Apple trust roots, and prebuilt logo assets are bundle
 
 ```sh
 node scripts/check-live-export.mjs
+```
+
+To verify a real two-pass batch, its Apple-trusted signatures, First Class fields, descriptions, archive layout, and daily counter (consumes two generations):
+
+```sh
+node scripts/check-live-batch.mjs
 ```
 
 ## Search engine discovery

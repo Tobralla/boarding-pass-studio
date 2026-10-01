@@ -27,7 +27,7 @@ export function passJSON(data,identifiers={}) {
  const time = new Date(`2000-01-01T${data.boardingTime}:00`).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
  return {
  formatVersion:1, passTypeIdentifier:identifiers.passTypeIdentifier||'pass.com.example.passport', teamIdentifier:identifiers.teamIdentifier||'TEAMIDHERE',
- serialNumber:crypto.randomUUID(), organizationName:'PassPort Studio', description:`${t.name} boarding pass template`,
+ serialNumber:crypto.randomUUID(), organizationName:'PassPort Studio', description:`${t.name} boarding pass`,
  backgroundColor:rgb(theme.background), foregroundColor:rgb(theme.foreground), labelColor:rgb(theme.accent),
  barcodes:[{format:'PKBarcodeFormatQR',message:data.barcode||`PASSPORT-DEMO:${JSON.stringify({name:data.name,from:data.from.code,to:data.to.code,date:data.date,flight:data.flight,seat:data.seat})}`,messageEncoding:'utf-8'}],
  boardingPass:{transitType:'PKTransitTypeAir',headerFields:[{key:'gate',label:'GATE',value:data.gate.toUpperCase()}],
