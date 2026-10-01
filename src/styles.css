@@ -53,6 +53,8 @@ body{
 .generation-mode button{padding:8px 14px;font-size:12px;color:#777;border-radius:4px}
 .generation-mode button[aria-pressed=true]{background:#fff;color:#171717;box-shadow:0 1px 3px #00000012}
 .batch-options{display:flex;justify-content:space-between;align-items:center;margin-top:22px}
+.batch-date{margin-top:18px}
+.batch-date>small{display:block;margin-top:7px;font-size:10px;color:#888}
 .batch-label{display:block;font-size:11px;color:#777;margin-bottom:9px}
 .batch-count{display:flex;gap:6px}.batch-count button{height:34px;width:34px;border:1px solid #e3e3e3;border-radius:4px;font-size:12px}
 .batch-count button[aria-pressed=true]{background:#171717;color:#fff;border-color:#171717}
