@@ -1,6 +1,6 @@
-# PassPort Studio
+# Free Fake Boarding Pass Apple Wallet
 
-A local boarding pass template generator with five airline styles, your supplied logos, 7,000+ searchable airports, cabin selection, live front/back preview, local draft saving, and downloadable Apple Wallet pass bundles.
+Create free fake boarding passes for Apple Wallet and LARP your next first-class trip. Five airline styles, searchable airports, cabin selection, previews, and signed .pkpass downloads.
 
 ## Run
 
