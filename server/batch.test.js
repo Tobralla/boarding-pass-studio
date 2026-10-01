@@ -23,6 +23,18 @@ test('quick generation rejects invalid names, counts, and an incomplete airport 
  for(const count of [0,6,1.5,'3'])assert.throws(()=>createQuickBatch({...options,count}),/between 1 and 5/);
  assert.throws(()=>createQuickBatch({...options,count:5,airports:airports.slice(0,2)}),/directory/);
 });
+test('mixed quick batches use different airlines with matching flight prefixes and default colors',()=>{
+ for(let count=1;count<=5;count++){
+  const passes=createQuickBatch({...options,color:undefined,count,mixedTemplates:true,random:random()});
+  assert.equal(new Set(passes.map(p=>p.template)).size,count);
+  for(const p of passes){
+   assert.ok(p.flight.startsWith(templates[p.template].prefix+' '));
+   assert.equal(p.color,undefined);
+   assert.equal(p.cabin,'First');
+   assert.equal(passJSON(p).description,`${templates[p.template].name} boarding pass`);
+  }
+ }
+});
 test('batch requests run sequentially, preserve partial successes, and retry only unfinished passes',async()=>{
  const passes=createQuickBatch({...options,count:3,random:random()});let calls=0,active=0;
  const first=await collectBatch(passes,{download:async()=>{assert.equal(active++,0);try{calls++;if(calls===2)throw new Error('Service unavailable');return new Blob(['signed-one']);}finally{active--;}}});
