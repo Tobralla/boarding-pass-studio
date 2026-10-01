@@ -2,7 +2,7 @@
 
 Create free fake boarding passes for Apple Wallet and LARP your next first-class trip. Five airline styles, searchable airports, cabin selection, previews, and signed .pkpass downloads.
 
-The site opens on Custom pass for manual editing. Quick generate only needs a passenger name in `LASTNAME/FIRSTNAME` format and a quantity from 1–5. It generates different airline templates, airports, and boarding times, always in First Class. Each airline starts with its own default color. Preview each journey, customize its color, or shuffle for new journeys.
+The site opens on Custom pass for manual editing. Quick generate only needs a passenger name in `LASTNAME/FIRSTNAME` format and a quantity from 1–5. It picks an airline independently at random for each pass, allowing repeats, and generates different airports and boarding times, always in First Class. Each airline starts with its own default color. Preview each journey, customize its color, or shuffle for new journeys.
 
 Each pass downloads separately as `.pkpass`. After a batch generates, tap its individual download links to open each pass. Downloads reuse the signed files without consuming more generations. Each signed pass uses one daily generation. If a batch stops partway through, completed passes can be downloaded and the remaining passes retried without generating the completed ones again.
 

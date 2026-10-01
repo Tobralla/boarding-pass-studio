@@ -17,7 +17,8 @@ export function createQuickBatch({name,count,template,color,mixedTemplates=false
  let pool=hubs.map(code=>directory.get(code)).filter(Boolean);if(pool.length<count*2)pool=[...directory.values()];
  if(pool.length<count*2)throw new Error('The airport directory is still loading. Try again in a moment.');
  const selected=shuffled(pool,random).slice(0,count*2),times=shuffled(Array.from({length:64},(_,i)=>360+i*15),random);
- const airlineTemplates=mixedTemplates?shuffled(Object.keys(templates),random):Array(count).fill(template);
+ const airlines=Object.keys(templates);
+ const airlineTemplates=Array.from({length:count},()=>mixedTemplates?airlines[Math.floor(random()*airlines.length)]:template);
  return Array.from({length:count},(_,i)=>{
   const date=new Date(now);date.setHours(12,0,0,0);date.setDate(date.getDate()+Math.floor(random()*21));
   const minutes=times[i];

@@ -23,10 +23,10 @@ test('quick generation rejects invalid names, counts, and an incomplete airport 
  for(const count of [0,6,1.5,'3'])assert.throws(()=>createQuickBatch({...options,count}),/between 1 and 5/);
  assert.throws(()=>createQuickBatch({...options,count:5,airports:airports.slice(0,2)}),/directory/);
 });
-test('mixed quick batches use different airlines with matching flight prefixes and default colors',()=>{
+test('mixed quick batches choose airlines independently and preserve matching flight prefixes and default colors',()=>{
  for(let count=1;count<=5;count++){
   const passes=createQuickBatch({...options,color:undefined,count,mixedTemplates:true,random:random()});
-  assert.equal(new Set(passes.map(p=>p.template)).size,count);
+  assert.equal(passes.length,count);
   for(const p of passes){
    assert.ok(p.flight.startsWith(templates[p.template].prefix+' '));
    assert.equal(p.color,undefined);
@@ -34,6 +34,9 @@ test('mixed quick batches use different airlines with matching flight prefixes a
    assert.equal(passJSON(p).description,`${templates[p.template].name} boarding pass`);
   }
  }
+ const repeats=createQuickBatch({...options,color:undefined,count:5,mixedTemplates:true,random:()=>0.1});
+ assert.equal(new Set(repeats.map(p=>p.template)).size,1,'Repeated airlines must be allowed');
+ assert.equal(repeats[0].template,'united');
 });
 test('batch requests run sequentially, preserve partial successes, and retry only unfinished passes',async()=>{
  const passes=createQuickBatch({...options,count:3,random:random()});let calls=0,active=0;
