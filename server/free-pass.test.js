@@ -7,6 +7,7 @@ import {freePassArguments,createFreePass,appleRoots} from './free-pass.js';
 import {requestSignedPass,FreeSigningError} from './wallet-service.js';
 import {createExportHandler} from './api.js';
 import {templates,createBundle} from './pass.js';
+import {verifyRemotePass} from '../worker/verify.js';
 const pass={template:'united',name:'Alex Example',cabin:'First',from:{code:'CPH',city:'Copenhagen'},to:{code:'LHR',city:'London'},date:'2026-10-15',boardingTime:'19:25',flight:'UA 1846',seat:'1A',gate:'B82',group:'2',barcode:''};
 function transport({sse=false,url='https://walletmcppass.com/download/test-token',failure}={}){
  const calls=[];
@@ -68,9 +69,11 @@ test('free pass integration accepts a correctly signed fixture and rejects chang
  // A local test issuer exercises verification; it does not represent an Apple certificate.
  const keys=forge.pki.rsa.generateKeyPair(2048),cert=forge.pki.createCertificate();cert.publicKey=keys.publicKey;cert.serialNumber='01';
  cert.validity.notBefore=new Date(Date.now()-1000);cert.validity.notAfter=new Date(Date.now()+86400000);
- const attrs=[{name:'commonName',value:'Free signer fixture'},{name:'organizationalUnitName',value:'TESTTEAM01'},{type:'0.9.2342.19200300.100.1.1',value:'pass.com.test.free'}];cert.setSubject(attrs);cert.setIssuer(attrs);cert.sign(keys.privateKey,forge.md.sha256.create());
+ const attrs=[{name:'commonName',value:'Free signer fixture'},{name:'organizationalUnitName',value:'TESTTEAM01'},{type:'0.9.2342.19200300.100.1.1',value:'pass.com.test.free'}];cert.setSubject(attrs);cert.setIssuer(attrs);cert.setExtensions([{name:'basicConstraints',cA:true},{name:'keyUsage',digitalSignature:true,keyCertSign:true}]);cert.sign(keys.privateKey,forge.md.sha256.create());
  const trustedRootsPem=forge.pki.certificateToPem(cert);
+ let lastArgs;
  const request=async(args,modify=false)=>{
+  lastArgs=structuredClone(args);
   const rgb=hex=>`rgb(${hex.slice(1).match(/../g).map(x=>parseInt(x,16)).join(', ')})`;
   const json={formatVersion:1,passTypeIdentifier:'pass.com.test.free',teamIdentifier:'TESTTEAM01',serialNumber:args.serial_number,organizationName:args.organization_name,description:args.description,backgroundColor:rgb(args.background_color),foregroundColor:rgb(args.foreground_color),labelColor:rgb(args.label_color),barcodes:[{format:'PKBarcodeFormatQR',message:args.barcode_message,messageEncoding:'iso-8859-1'}],boardingPass:{transitType:'PKTransitTypeAir',headerFields:args.header_fields,primaryFields:args.primary_fields,secondaryFields:args.secondary_fields,auxiliaryFields:args.auxiliary_fields,backFields:args.back_fields}};
   if(modify)json.boardingPass.secondaryFields=json.boardingPass.secondaryFields.map(f=>f.key==='seat'?{...f,value:'99Z'}:f);
@@ -81,5 +84,10 @@ test('free pass integration accepts a correctly signed fixture and rejects chang
   return zip.generateAsync({type:'nodebuffer'});
  };
  const bytes=await createFreePass({...pass,template:'emirates',color:'#f5f5f5'},{request,trustedRootsPem});assert.ok(bytes.length>0);
+ await verifyRemotePass(bytes,lastArgs,trustedRootsPem);
+ const originalArgs=structuredClone(lastArgs);
+ const tampered=await JSZip.loadAsync(bytes);tampered.file('logo.png',Buffer.from('changed'));
+ await assert.rejects(async()=>verifyRemotePass(await tampered.generateAsync({type:'nodebuffer'}),originalArgs,trustedRootsPem));
+ const changed=await request(originalArgs,true);await assert.rejects(()=>verifyRemotePass(changed,originalArgs,trustedRootsPem),/Pass details changed/);
  await assert.rejects(()=>createFreePass(pass,{request:args=>request(args,true),trustedRootsPem}),/failed verification/);
 });

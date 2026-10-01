@@ -30,3 +30,6 @@
 @media(max-width:480px){.color-swatches{gap:9px}.color-swatch{width:29px;height:29px}.color-swatch span{width:21px;height:21px}.custom-color{height:29px}}
 .template-art{align-items:center;justify-content:center}
 .template-art img{object-position:center}
+
+.quota-count { font-size: 12px; color: #666; margin-left: 16px; }
+@media(max-width: 540px) { .quota-count { display: block; margin: 10px 0 0; } }

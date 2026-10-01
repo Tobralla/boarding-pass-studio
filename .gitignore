@@ -9,3 +9,6 @@ verification/
 .DS_Store
 .env.*
 !.env.example
+.worker-build/
+.data/
+.wrangler/

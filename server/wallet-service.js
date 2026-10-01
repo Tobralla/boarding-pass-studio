@@ -1,3 +1,4 @@
+import {Buffer} from 'node:buffer';
 export class FreeSigningError extends Error{
  constructor(message,status=502){super(message);this.name='FreeSigningError';this.status=status;}
 }
@@ -41,13 +42,14 @@ export async function requestSignedPass(args,{fetchImpl=fetch}={}){
   if(!output?.download_url)throw new FreeSigningError('The signing service returned no downloadable pass.');
   const url=new URL(output.download_url);
   if(url.protocol!=='https:'||!['walletmcppass.com','vps.arshwaraich.com'].includes(url.hostname)||url.username||url.password||url.port||!/^\/(?:wallet-mcp\/)?download\/[A-Za-z0-9_-]+$/.test(url.pathname))throw new FreeSigningError('The signing service returned an unexpected download URL.');
-  const download=await fetchImpl(url,{signal:AbortSignal.timeout(30000),redirect:'error'});
+  const download=await fetchImpl(url,{signal:AbortSignal.timeout(30000),redirect:'manual'});
   if(!download.ok){await download.body?.cancel();throw new FreeSigningError('The signed pass could not be downloaded. Try again.');}
   const bytes=Buffer.from(await download.arrayBuffer());
   if(!bytes.length||bytes.length>5*1024*1024)throw new FreeSigningError('The signing service returned an invalid pass file.');
   return bytes;
  }catch(error){
   if(error instanceof FreeSigningError)throw error;
+  console.error('Free signing connection error:',error.name,error.message);
   if(error.name==='TimeoutError'||error.name==='AbortError')throw new FreeSigningError('The signing service took too long to respond. Try again.',504);
   throw new FreeSigningError('Could not connect to the free signing service. Check your connection and try again.');
  }finally{

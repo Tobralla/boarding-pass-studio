@@ -1,0 +1,17 @@
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {verifyPkpass} from './verify-pkpass.mjs';
+import {appleRoots} from '../server/free-pass.js';
+const backend=process.argv[2]||'https://passport-signing.tobralla.workers.dev';
+const before=await (await fetch(`${backend}/api/status`)).json();
+const pass={template:'emirates',name:'Alex Example',cabin:'First',from:{code:'CPH',city:'Copenhagen'},to:{code:'LHR',city:'London'},date:'2026-10-15',boardingTime:'19:25',flight:'TEST 100',seat:'1A',gate:'B1',group:'1',color:'#b82331'};
+const response=await fetch(`${backend}/api/export`,{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://tobralla.github.io'},body:JSON.stringify({pass,format:'pkpass'}),signal:AbortSignal.timeout(90000)});
+if(!response.ok)throw new Error(`Live export HTTP ${response.status}: ${await response.text()}`);
+const bytes=Buffer.from(await response.arrayBuffer());
+await mkdir('verification/deployed',{recursive:true});await writeFile('verification/deployed/CPH-LHR.pkpass',bytes);
+const verified=await verifyPkpass(bytes,{folder:'verification/deployed/checks',trustedRootsPem:await appleRoots()});
+if(verified.pass.boardingPass.auxiliaryFields[0].value!=='ALEX EXAMPLE')throw new Error('Passenger was changed');
+if(verified.pass.backgroundColor!=='rgb(184, 35, 49)')throw new Error('Emirates color was changed');
+const after=await (await fetch(`${backend}/api/status`)).json();
+if(after.quota.remaining!==before.quota.remaining-1)throw new Error('Quota did not decrease by one');
+const report={backend,checks:verified.checks,remainingBefore:before.quota.remaining,remainingAfter:after.quota.remaining,signer:verified.signer,iphoneInstallation:'not-tested'};
+await writeFile('verification/deployed/report.json',JSON.stringify(report,null,2));console.log(report);

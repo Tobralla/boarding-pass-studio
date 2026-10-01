@@ -61,7 +61,7 @@ The included `.github/workflows/pages.yml` builds, tests, and deploys the fronte
 
 Double-click `Publish GitHub Pages.command` to sign into GitHub, create a public `boarding-pass-studio` repository in your account, push the prepared commit, enable GitHub Pages, and start deployment. It stops if the repository name already exists before the initial upload. The deployment status is in the repository's Actions tab.
 
-**GitHub Pages hosts the frontend only. Pass downloads require a separately hosted Node signing server.** The template picker, editor, colors, and preview work without the backend; downloads show a configuration message until it is connected.
+**GitHub Pages hosts the frontend; the deployed Cloudflare Worker handles downloads.** The repository variable `VITE_API_BASE` points at `https://passport-signing.tobralla.workers.dev`. The Worker uses the same free signing service and verifies its signature and Apple certificate chain with Web Crypto before returning a pass. No Apple signing keys are deployed.
 
 1. Deploy this project's `Dockerfile` to a Node/container host, or run `npm ci`, `npm run build`, then `npm start` on a server with Node 24 and OpenSSL installed. No Apple certificates are needed for the default free signing service.
 2. Set the backend environment variable `ALLOWED_ORIGINS` to `https://YOUR_USERNAME.github.io` (without the repository path). Set `PORT` to the port required by your host. Production listens on `0.0.0.0` by default. Confirm `https://YOUR_BACKEND/api/status` returns JSON.
@@ -75,3 +75,22 @@ BASE_PATH=/boarding-pass-studio/ VITE_STATIC_HOSTING=true npm run build
 ```
 
 The backend still verifies each remotely signed pass before returning it. CORS permits only the configured frontend origins and same-origin browser requests. No certificate keys, verification artifacts, `.env` values, or local draft data are included in the Pages artifact or Git commit.
+
+## Daily free-pass allowance
+
+The site shares an allowance of 30 signed pass downloads each UTC day. The counter beside Download pass is fetched from the backend, refreshes every minute and after each attempt, and resets at 00:00 UTC. Cloudflare Durable Object storage makes reservations atomic and persistent; template ZIPs do not consume the allowance. Failed exports release their reservation, and an upstream rate-limit error marks the allowance unavailable until the next UTC day. The local Node server uses a persistent counter in ignored `.data/`.
+
+This counter measures the site's allowance. WalletMCPPass does not expose an exact per-caller remaining-quota endpoint; its own caller/global quotas can still limit availability.
+
+To update the deployed Worker using the connected Cloudflare account:
+
+```sh
+npm run build:worker
+npx --yes wrangler@4.145.0 deploy
+```
+
+The Worker source, public Apple trust roots, and prebuilt logo assets are bundled by `scripts/build-worker.mjs`. `wrangler.toml` holds public deployment settings; no access tokens are committed. To test a real hosted export and independently check its signature and quota decrement (consumes one free pass):
+
+```sh
+node scripts/check-live-export.mjs
+```

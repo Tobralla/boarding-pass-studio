@@ -1,1 +1,28 @@
-{"name":"boarding-pass-studio","version":"1.0.0","private":true,"type":"module","scripts":{"dev":"node server/index.js","build":"vite build","start":"NODE_ENV=production node server/index.js","test":"node --test server/*.test.js"},"dependencies":{"@vitejs/plugin-react":"latest","vite":"latest","react":"latest","react-dom":"latest","lucide-react":"latest","qrcode.react":"latest","express":"latest","jszip":"latest","sharp":"latest","node-forge":"latest","dotenv":"latest"},"devDependencies":{}}
+{
+  "name": "boarding-pass-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server/index.js",
+    "build": "vite build",
+    "start": "NODE_ENV=production node server/index.js",
+    "test": "node --test server/*.test.js",
+    "build:worker": "node scripts/build-worker.mjs"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "asn1js": "^3.0.10",
+    "dotenv": "latest",
+    "express": "latest",
+    "jszip": "latest",
+    "lucide-react": "latest",
+    "node-forge": "latest",
+    "pkijs": "^3.4.1",
+    "qrcode.react": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "sharp": "latest",
+    "vite": "latest"
+  }
+}

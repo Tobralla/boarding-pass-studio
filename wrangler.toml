@@ -1,0 +1,21 @@
+name = "passport-signing"
+main = ".worker-build/worker.js"
+account_id = "677bffb491b3ee06ec282beedf669117"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+no_bundle = true
+
+[vars]
+ALLOWED_ORIGINS = "https://tobralla.github.io,http://127.0.0.1:5173,http://localhost:5173"
+
+[[durable_objects.bindings]]
+name = "DAILY_QUOTA"
+class_name = "DailyQuota"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["DailyQuota"]
+
+[observability]
+enabled = false
