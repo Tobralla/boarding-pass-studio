@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://tobralla.github.io/boarding-pass-studio/sitemap.xml

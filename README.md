@@ -94,3 +94,7 @@ The Worker source, public Apple trust roots, and prebuilt logo assets are bundle
 ```sh
 node scripts/check-live-export.mjs
 ```
+
+## Search engine discovery
+
+The published page permits indexing and declares its canonical URL. `public/sitemap.xml` lists the page. `public/robots.txt` is copied to the project site; the effective host-level robots file is also published at `https://tobralla.github.io/robots.txt` by the `Tobralla/Tobralla.github.io` repository. It allows crawling and references the project's sitemap. Search engines choose whether and when to index the page.
