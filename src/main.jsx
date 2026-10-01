@@ -54,7 +54,7 @@ function PassPreview({pass,back}){
 }
 function App(){
  const [pass,setPass]=useState(()=>{try{const v=JSON.parse(localStorage.getItem('passport-draft'));return v&&templates.some(t=>t.id===v.template)&&v.from?.code&&v.to?.code?{...defaults,...v,cabin:'First'}:defaults;}catch{return defaults;}});
- const [mode,setMode]=useState('quick'),[batchName,setBatchName]=useState(''),[batchCount,setBatchCount]=useState(3),[batchSeed,setBatchSeed]=useState(0),[previewIndex,setPreviewIndex]=useState(0),[batchFiles,setBatchFiles]=useState([]),[batchProgress,setBatchProgress]=useState(0);
+ const [mode,setMode]=useState('custom'),[batchName,setBatchName]=useState(''),[batchCount,setBatchCount]=useState(3),[batchSeed,setBatchSeed]=useState(0),[previewIndex,setPreviewIndex]=useState(0),[batchFiles,setBatchFiles]=useState([]),[batchProgress,setBatchProgress]=useState(0);
  const [airports,setAirports]=useState([]),[exportOpen,setExportOpen]=useState(false),[back,setBack]=useState(false),[quota,setQuota]=useState(null),[provider,setProvider]=useState(api.configured?'free':'unavailable'),[busy,setBusy]=useState(''),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const formRef=useRef(null),quickRef=useRef(null),exportRef=useRef(null);const t=templates.find(t=>t.id===pass.template);
  const batchPlan=useMemo(()=>airports.length?createQuickBatch({name:'LASTNAME/FIRSTNAME',count:batchCount,template:'united',airports}):[],[airports,batchCount,batchSeed]);
