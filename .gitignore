@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+certificates/
+*.pem
+*.p12
+*.key
+verification/
+.DS_Store
+.env.*
+!.env.example
