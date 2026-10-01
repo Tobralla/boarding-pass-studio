@@ -6,7 +6,7 @@ import './styles.css';
 import {passTheme} from '../shared/theme.js';
 import {createApiClient} from './api-client.js';
 import {createQuickBatch,normalizeBatchName} from '../shared/quick-batch.js';
-import {collectBatch,packBatch} from './batch-download.js';
+import {collectBatch} from './batch-download.js';
 const api=createApiClient({base:import.meta.env.VITE_API_BASE||'',staticHosting:import.meta.env.VITE_STATIC_HOSTING==='true'});
 const assetBase=import.meta.env.BASE_URL;
 
@@ -52,6 +52,19 @@ function PassPreview({pass,back}){
  </>}
  </div>
 }
+function PassDownloads({files,passes}){
+ const [links,setLinks]=useState([]);
+ useEffect(()=>{
+  const downloads=files.map(file=>({...file,url:URL.createObjectURL(new Blob([file.bytes],{type:'application/vnd.apple.pkpass'}))}));
+  setLinks(downloads);
+  return()=>downloads.forEach(file=>URL.revokeObjectURL(file.url));
+ },[files]);
+ if(!links.length)return null;
+ return <div className="pass-downloads"><p>Download each boarding pass separately.</p>{links.map(file=>{
+  const pass=passes[file.index],airline=templates.find(t=>t.id===pass.template);
+  return <a key={file.index} href={file.url} download={file.name}><Download size={15}/><span>{airline.short}<small>{pass.from.code} → {pass.to.code} · {pass.boardingTime}</small></span><span>.pkpass</span></a>;
+ })}</div>;
+}
 function App(){
  const [pass,setPass]=useState(()=>{try{const v=JSON.parse(localStorage.getItem('passport-draft'));return v&&templates.some(t=>t.id===v.template)&&v.from?.code&&v.to?.code?{...defaults,...v,cabin:'First'}:defaults;}catch{return defaults;}});
  const [mode,setMode]=useState('custom'),[batchName,setBatchName]=useState(''),[batchCount,setBatchCount]=useState(3),[batchSeed,setBatchSeed]=useState(0),[previewIndex,setPreviewIndex]=useState(0),[batchFiles,setBatchFiles]=useState([]),[batchProgress,setBatchProgress]=useState(0);
@@ -84,9 +97,9 @@ function App(){
   try{
    const passes=batchPasses.map(p=>({...p,name}));
    const result=await collectBatch(passes,{download:api.download,completed:batchFiles,onProgress:done=>setBatchProgress(done),onFile:setBatchFiles});
-   if(result.files.length){const packed=await packBatch(result.files);saveBlob(packed.blob,`${name.replace(/[^A-Z0-9-]/g,'-')}-boarding-passes.${packed.extension}`);}
-   if(result.error)setError(`${result.files.length} of ${batchCount} boarding passes downloaded. ${result.error.message}`);
-   else setNotice(`${result.files.length} boarding ${result.files.length===1?'pass':'passes'} downloaded.`);
+   if(batchCount===1&&result.files.length)saveBlob(new Blob([result.files[0].bytes],{type:'application/vnd.apple.pkpass'}),result.files[0].name);
+   if(result.error)setError(`${result.files.length} of ${batchCount} boarding passes ready to download. ${result.error.message}`);
+   else setNotice(batchCount===1?'Boarding pass downloaded.':`${result.files.length} boarding passes ready. Tap each pass to download.`);
   }catch(e){setError(e.message);}finally{setBusy('');refreshStatus();}
  }
  function changeMode(value){setMode(value);setError('');setExportOpen(false);}
@@ -100,7 +113,7 @@ function App(){
  <aside className="preview-panel"><div className="preview-heading"><div className="preview-tabs" role="group" aria-label="Preview side"><button className={!back?'active':''} aria-pressed={!back} onClick={()=>setBack(false)}>Front</button><button className={back?'active':''} aria-pressed={back} onClick={()=>setBack(true)}>Back</button></div></div><div className="preview-canvas"><PassPreview pass={previewPass} back={back}/></div><ColorPicker disabled={!!busy} value={previewPass.color||previewTemplate.color} defaultColor={previewTemplate.color} onChange={value=>mode==='quick'?setBatchColors(colors=>({...colors,[previewPass.template]:value})):update('color',value)}/></aside></div>
  </main></div>
  {notice&&<div className="toast" role="status"><Check size={17}/>{notice}<button onClick={()=>setNotice('')} aria-label="Dismiss message"><X size={14}/></button></div>}
- {exportOpen&&<div className="modal-overlay" onMouseDown={e=>{if(e.target===e.currentTarget&&!busy)setExportOpen(false);}}><div className="modal" role="dialog" aria-modal="true" aria-labelledby="dialog-title" ref={exportRef}><button className="modal-close" disabled={!!busy} onClick={()=>setExportOpen(false)} aria-label="Close dialog"><X size={19}/></button><h2 id="dialog-title">{mode==='quick'&&batchCount>1?'Download boarding passes':'Download boarding pass'}</h2><p>{mode==='quick'?<>{batchName} · First class<br/>{batchCount} boarding {batchCount===1?'pass':'passes'}</>:<>{t.name} · {pass.from.code} → {pass.to.code}<br/>{pass.name} · {pass.cabin}</>}</p>{provider!=='unavailable'&&<div className="signing-state ready"><span/>{provider==='local'?'Signed with your certificate':quotaText}</div>}{provider==='free'&&<p className="modal-note">Shared site allowance. Resets at midnight UTC.</p>}{mode==='quick'?<><button disabled={!!busy} className="primary-button full" onClick={downloadQuickBatch}>{busy==='batch'?<LoaderCircle size={17} className="spin"/>:<Wallet size={17}/>} {busy==='batch'?`Generating ${Math.min(batchProgress+1,batchCount)} of ${batchCount}…`:batchFiles.length===batchCount?'Download again':batchFiles.length?'Download remaining passes':batchCount===1?'Download boarding pass':'Download boarding passes'}</button><p className="modal-note">{batchCount} boarding {batchCount===1?'pass uses 1 generation':`passes use ${batchCount} generations`}.</p></>:<><button disabled={!!busy} className="primary-button full" onClick={()=>download('pkpass')}>{busy==='pkpass'?<LoaderCircle size={17} className="spin"/>:<Wallet size={17}/>}Download .pkpass</button><div className="export-separator"><span>TEMPLATE BUNDLE</span></div><button className="outline-button full" disabled={!!busy} onClick={()=>download('zip')}>{busy==='zip'?<LoaderCircle size={17} className="spin"/>:<Download size={17}/>}Download template ZIP</button><details className="barcode-option"><summary>Use your own barcode text</summary><label htmlFor="barcode">Barcode payload</label><textarea id="barcode" maxLength={1000} disabled={!!busy} value={pass.barcode} onChange={e=>update('barcode',e.target.value)} placeholder="Paste an existing boarding pass barcode payload"/><small>Leave empty to generate a QR from your pass details.</small></details></>}{error&&<p className="error-message" role="alert">{error}</p>}</div></div>}
+ {exportOpen&&<div className="modal-overlay" onMouseDown={e=>{if(e.target===e.currentTarget&&!busy)setExportOpen(false);}}><div className="modal" role="dialog" aria-modal="true" aria-labelledby="dialog-title" ref={exportRef}><button className="modal-close" disabled={!!busy} onClick={()=>setExportOpen(false)} aria-label="Close dialog"><X size={19}/></button><h2 id="dialog-title">{mode==='quick'&&batchCount>1?'Download boarding passes':'Download boarding pass'}</h2><p>{mode==='quick'?<>{batchName} · First class<br/>{batchCount} boarding {batchCount===1?'pass':'passes'}</>:<>{t.name} · {pass.from.code} → {pass.to.code}<br/>{pass.name} · {pass.cabin}</>}</p>{provider!=='unavailable'&&<div className="signing-state ready"><span/>{provider==='local'?'Signed with your certificate':quotaText}</div>}{provider==='free'&&<p className="modal-note">Shared site allowance. Resets at midnight UTC.</p>}{mode==='quick'?<><button disabled={!!busy||(batchCount>1&&batchFiles.length===batchCount)} className="primary-button full" onClick={downloadQuickBatch}>{busy==='batch'?<LoaderCircle size={17} className="spin"/>:<Wallet size={17}/>} {busy==='batch'?`Generating ${Math.min(batchProgress+1,batchCount)} of ${batchCount}…`:batchFiles.length===batchCount?(batchCount===1?'Download again':'Passes ready'):batchFiles.length?'Download remaining passes':batchCount===1?'Download boarding pass':'Download boarding passes'}</button><p className="modal-note">{batchCount} boarding {batchCount===1?'pass uses 1 generation':`passes use ${batchCount} generations`}.</p><PassDownloads files={batchFiles} passes={batchPasses}/></>:<><button disabled={!!busy} className="primary-button full" onClick={()=>download('pkpass')}>{busy==='pkpass'?<LoaderCircle size={17} className="spin"/>:<Wallet size={17}/>}Download .pkpass</button><div className="export-separator"><span>TEMPLATE BUNDLE</span></div><button className="outline-button full" disabled={!!busy} onClick={()=>download('zip')}>{busy==='zip'?<LoaderCircle size={17} className="spin"/>:<Download size={17}/>}Download template ZIP</button><details className="barcode-option"><summary>Use your own barcode text</summary><label htmlFor="barcode">Barcode payload</label><textarea id="barcode" maxLength={1000} disabled={!!busy} value={pass.barcode} onChange={e=>update('barcode',e.target.value)} placeholder="Paste an existing boarding pass barcode payload"/><small>Leave empty to generate a QR from your pass details.</small></details></>}{error&&<p className="error-message" role="alert">{error}</p>}</div></div>}
  </div>
 }
 createRoot(document.getElementById('root')).render(<App/>);
